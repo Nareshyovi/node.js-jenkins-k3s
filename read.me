@@ -1,0 +1,309 @@
+Project 2: Dockerize a Node.js Express Application
+Goal
+We want to run a Node.js application inside a Docker container instead of directly on our computer.
+Without Docker
+Your Computer
+│
+├── Node.js
+├── Express
+├── npm
+└── Application
+If another computer doesn't have Node.js installed, your app won't run.
+________________________________________
+With Docker
+Your Computer
+│
+└── Docker
+      │
+      └── Container
+            ├── Node.js
+            ├── Express
+            ├── npm
+            └── Application
+The container includes everything the application needs, so it runs consistently on any machine with Docker.
+________________________________________
+Step 1: Create a Project Folder
+mkdir nodejs-docker-project
+Explanation
+•	mkdir = Make Directory 
+•	Creates a new folder named nodejs-docker-project. 
+Now move into the folder:
+cd nodejs-docker-project
+Check where you are:
+pwd
+Example output:
+/home/ubuntu/nodejs-docker-project
+Explanation
+•	cd = Change Directory. 
+•	pwd = Print Working Directory (shows your current location). 
+________________________________________
+Step 2: Initialize a Node.js Project
+Create a new Node.js project:
+npm init -y
+What happens?
+Docker doesn't need this, but Node.js does.
+This command creates:
+package.json
+Open it:
+cat package.json
+Example:
+{
+  "name": "nodejs-docker-project",
+  "version": "1.0.0",
+  "main": "index.js"
+}
+What is package.json?
+Think of it as the application's identity card.
+It stores:
+•	Project name 
+•	Version 
+•	Dependencies 
+•	Scripts 
+Without it, npm doesn't know how to manage your application.
+________________________________________
+Step 3: Install Express
+npm install express
+What happens?
+npm downloads Express from the npm registry.
+Now your project contains:
+node_modules/
+package-lock.json
+package.json
+What is node_modules?
+It contains all the libraries required by your application.
+What is package-lock.json?
+It locks dependency versions so everyone installs the exact same versions.
+________________________________________
+Step 4: Create the Application
+vi app.js
+Paste:
+const express = require('express');
+
+const app = express();
+
+const PORT = 3000;
+
+app.get('/', (req, res) => {
+    res.send('<h1>Hello from Docker!</h1>');
+});
+
+app.listen(PORT, () => {
+    console.log(`Server running on ${PORT}`);
+});
+________________________________________
+Explanation Line by Line
+Import Express
+const express = require('express');
+This loads the Express library.
+________________________________________
+Create the Application
+const app = express();
+Creates an Express application.
+Think of it as starting your web server.
+________________________________________
+Define the Port
+const PORT = 3000;
+The application listens on port 3000.
+________________________________________
+Create a Route
+app.get('/', (req, res) => {
+When someone visits:
+http://localhost:3000
+run this function.
+________________________________________
+Send a Response
+res.send('<h1>Hello from Docker!</h1>');
+The browser displays:
+Hello from Docker!
+________________________________________
+Start the Server
+app.listen(PORT);
+Starts the application.
+Without this line, the application never starts.
+________________________________________
+Step 5: Run Without Docker
+node app.js
+Output:
+Server running on 3000
+Open:
+http://localhost:3000
+You should see:
+Hello from Docker!
+Stop it:
+Ctrl + C
+________________________________________
+Step 6: Create the Dockerfile
+Create a file named Dockerfile.
+vi Dockerfile
+Paste:
+FROM node:20
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["node","app.js"]
+________________________________________
+Dockerfile Explanation
+Line 1
+FROM node:20
+Meaning
+Start from the official Node.js 20 image.
+It already includes:
+•	Linux 
+•	Node.js 
+•	npm 
+________________________________________
+Line 2
+WORKDIR /app
+Creates the /app directory and makes it the current working directory.
+Equivalent to:
+mkdir /app
+cd /app
+inside the container.
+________________________________________
+Line 3
+COPY package*.json ./
+Copies:
+package.json
+package-lock.json
+into the container.
+We copy these first because if only your application code changes, Docker can reuse the cached dependency installation layer, making builds much faster.
+________________________________________
+Line 4
+RUN npm install
+Installs Express and other dependencies inside the Docker image.
+________________________________________
+Line 5
+COPY . .
+Copies the rest of the project files, including app.js, into the container.
+________________________________________
+Line 6
+EXPOSE 3000
+Documents that the application listens on port 3000.
+It doesn't publish the port by itself; you still map it when running the container.
+________________________________________
+Line 7
+CMD ["node","app.js"]
+When the container starts, it automatically runs:
+node app.js
+________________________________________
+Step 7: Create a .dockerignore
+vi .dockerignore
+Contents:
+node_modules
+Why?
+When Docker copies the project:
+COPY . .
+it would otherwise copy your local node_modules.
+Instead, Docker installs fresh dependencies inside the image, keeping the image cleaner and avoiding platform-specific issues.
+________________________________________
+Step 8: Build the Image
+docker build -t node-app .
+Explanation
+docker build
+Build a Docker image.
+-t
+Assign a name.
+node-app
+Image name.
+.
+Use the current directory as the build context.
+________________________________________
+Check the image:
+docker images
+Output:
+REPOSITORY    TAG
+node-app      latest
+________________________________________
+Step 9: Run the Container
+docker run -d -p 3000:3000 --name node-container node-app
+Explanation
+docker run
+Creates and starts a container.
+-d
+Runs it in the background (detached mode).
+-p 3000:3000
+Maps:
+Computer Port → Container Port
+
+3000      →      3000
+--name
+Gives the container a friendly name.
+node-app
+The image to use.
+________________________________________
+Step 10: Verify
+docker ps
+Example:
+CONTAINER ID    IMAGE
+8ab76d          node-app
+________________________________________
+Step 11: Test
+Open:
+http://localhost:3000
+You'll see:
+Hello from Docker!
+________________________________________
+Step 12: Check Logs
+docker logs node-container
+Output:
+Server running on 3000
+________________________________________
+Step 13: Enter the Container
+docker exec -it node-container /bin/bash
+Inside the container:
+pwd
+Output:
+/app
+List files:
+ls
+View your application:
+cat app.js
+Exit:
+exit
+________________________________________
+Step 14: Stop and Remove
+Stop:
+docker stop node-container
+Remove:
+docker rm node-container
+Delete the image:
+docker rmi node-app
+________________________________________
+Flow of the Entire Project
+1. Create project folder
+          │
+          ▼
+2. npm init
+          │
+          ▼
+3. Install Express
+          │
+          ▼
+4. Write app.js
+          │
+          ▼
+5. Test locally
+          │
+          ▼
+6. Create Dockerfile
+          │
+          ▼
+7. Build Docker image
+          │
+          ▼
+8. Run Docker container
+          │
+          ▼
+9. Access in browser
+          │
+          ▼
+10. Stop and remove container
+This project introduces the complete Docker workflow you'll use repeatedly in DevOps: create an application, package it into an image, run it as a container, verify it works, and manage the container lifecycle. Once you're comfortable with these steps, you'll be well prepared to move on to multi-container applications using Docker Compose.
