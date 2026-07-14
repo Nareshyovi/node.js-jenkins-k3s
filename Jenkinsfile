@@ -2,33 +2,34 @@ pipeline {
 
     agent any
 
+    environment {
+        IMAGE_NAME = "nareshyovi/node-app"
+        IMAGE_TAG = "v1"
+    }
+
     stages {
 
-        stage('Clone') {
+        stage('Checkout') {
             steps {
-                echo "Source code downloaded from GitHub"
+                git 'https://github.com/Nareshyovi/node.js-jenkins-k3s.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t node-app .'
+                sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
             }
         }
 
-        stage('Remove Old Container') {
+        stage('Push Docker Image') {
             steps {
-                sh '''
-                docker rm -f node-container || true
-                '''
+                sh 'docker push $IMAGE_NAME:$IMAGE_TAG'
             }
         }
 
-        stage('Run Container') {
+        stage('Deploy to Kubernetes') {
             steps {
-                sh '''
-                docker run -d -p 3000:3000 --name node-container node-app
-                '''
+                sh 'kubectl apply -f deployment.yaml'
             }
         }
 
