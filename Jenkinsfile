@@ -11,7 +11,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git 'https://github.com/Nareshyovi/node.js-jenkins-k3s.git'
+                git branch: 'main', url: 'https://github.com/Nareshyovi/node.js-jenkins-k3s.git'
             }
         }
 
