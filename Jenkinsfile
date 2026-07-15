@@ -4,7 +4,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "nareshyovi/node-app"
-        IMAGE_TAG = "${BUILD_NUMBER}"
+        IMAGE_TAG = "V${BUILD_NUMBER}"
     }
 
     stages {
